@@ -102,3 +102,8 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+.idea
+deploy.sh
+config.ini
+*.zip
+*.pem
