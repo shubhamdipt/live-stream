@@ -1,22 +1,42 @@
 from datetime import datetime, timedelta
 from application import IMAGE_PATH
+import os
+import re
+
+TIME_ZONE_HOURS_DIFFERENCE = 2
+TIME_FORMAT = "%Y%m%d%H%M%S"
 
 
-def get_last_frame():
-    current_time = datetime.now() + timedelta(hours=1, minutes=55)  # timezone difference
-    # check for latest in last 1hours
-    latest_time = current_time - timedelta(hours=1)
-    frame_found = False
-    while current_time > latest_time and not frame_found:
-        current_time = current_time - timedelta(seconds=1)
-        time_string = current_time.strftime("%Y%m%d%H%M%S")
-        file_string = IMAGE_PATH + time_string + ".jpg"
+def get_sorted_files(
+        src_dir,
+        regex_ext='*',
+        sort_reverse=False,
+        latest_time=datetime.now() - timedelta(hours=1)): # SHOW LAST HOUR IMAGES BY DEFAULT
+    if TIME_ZONE_HOURS_DIFFERENCE > 0:
+        latest_time += timedelta(hours=TIME_ZONE_HOURS_DIFFERENCE)
+    else:
+        latest_time -= timedelta(hours=TIME_ZONE_HOURS_DIFFERENCE)
+
+    files_to_evaluate = list()
+    for f in os.listdir(src_dir):
         try:
-            frame = open(file_string, 'rb').read()
-            return frame
-        except:
+            creation_time = datetime.strptime(f.split(".")[0], TIME_FORMAT)
+            conditions = (
+                re.search(r'\d{14}', f[:len(f) - 4]) and
+                re.search(r'.*\.({})$'.format(regex_ext), f) and
+                creation_time > latest_time
+            )
+            if conditions:
+                files_to_evaluate.append(creation_time)
+        except Exception as e:
             pass
-    return open("blank.png", "rb").read()
+    files_to_evaluate.sort(reverse=sort_reverse)
+    files_to_evaluate = [
+        open(os.path.join(
+            src_dir, "{}.{}".format(i.strftime(TIME_FORMAT), regex_ext)
+        ), 'rb').read() for i in files_to_evaluate
+    ]
+    return files_to_evaluate
 
 
 class Camera:
@@ -34,22 +54,11 @@ class Camera:
         return self.frames[self.last_frame_number]
 
     @staticmethod
-    def get_all_frames(number_of_frames=20):
-        current_time = datetime.now() + timedelta(hours=1, minutes=50)  # timezone difference
-        # check for latest in last 1hours
-        latest_time = current_time - timedelta(hours=1)
-        frames = list()
-        count = 0
-        failed = 0
-        while current_time > latest_time and failed < 50 and count < number_of_frames:
-            current_time = current_time - timedelta(seconds=1)
-            time_string = current_time.strftime("%Y%m%d%H%M%S")
-            file_string = IMAGE_PATH + time_string + ".jpg"
-            try:
-                frames.append(open(file_string, 'rb').read())
-                count += 1
-            except:
-                failed += 1
-        return frames
+    def get_all_frames():
+        return get_sorted_files(
+            src_dir=IMAGE_PATH,
+            regex_ext="jpg",
+            sort_reverse=True,
+        )
 
 
