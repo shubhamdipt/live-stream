@@ -5,7 +5,8 @@
     <title>My Streaming</title>
   </head>
   <body>
-    <h1>My Streaming</h1>
-    <img src="{{ url_for('video_feed') }}" style="width: 500px">
+    <h1>Live Streaming</h1>
+    <img src="{{ url_for('live_video_feed') }}" style="width: 500px">
+    <a href="{{ url_for('history') }}">History</a>
   </body>
 </html>
